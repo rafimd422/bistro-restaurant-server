@@ -31,9 +31,15 @@ async function run() {
 
     const database = client.db("bristoDB");
     const menuDB = database.collection("menu");
+    const reviewDB = database.collection("reviews");
 
 app.get('/menu', async(req, res) => {
    const cursor = menuDB.find()
+   const result = await cursor.toArray()
+   res.send(result)
+})
+app.get('/reviews', async(req, res) => {
+   const cursor = reviewDB.find()
    const result = await cursor.toArray()
    res.send(result)
 })
