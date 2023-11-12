@@ -29,8 +29,14 @@ async function run() {
     await client.connect();
     // Send a ping to confirm a successful connection
 
+    const database = client.db("bristoDB");
+    const menuDB = database.collection("menu");
 
-
+app.get('/menu', async(req, res) => {
+   const cursor = menuDB.find()
+   const result = await cursor.toArray()
+   res.send(result)
+})
 
 
     await client.db("admin").command({ ping: 1 });
