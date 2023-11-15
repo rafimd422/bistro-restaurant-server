@@ -32,6 +32,7 @@ async function run() {
     const database = client.db("bristoDB");
     const menuDB = database.collection("menu");
     const reviewDB = database.collection("reviews");
+    const cartDB = database.collection("carts");
 
 app.get('/menu', async(req, res) => {
    const cursor = menuDB.find()
@@ -42,6 +43,12 @@ app.get('/reviews', async(req, res) => {
    const cursor = reviewDB.find()
    const result = await cursor.toArray()
    res.send(result)
+})
+// cart collections
+app.post('/carts', async(req, res)=> {
+  const cartItem = req.body;
+  const result = await cartDB.insertOne(cartItem)
+  res.send(result)
 })
 
 
