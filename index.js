@@ -33,6 +33,15 @@ async function run() {
     const menuDB = database.collection("menu");
     const reviewDB = database.collection("reviews");
     const cartDB = database.collection("carts");
+    const userDB = database.collection("users");
+
+// users releted apis
+
+app.post('/users', async(req,res) => {
+  const user = req.body;
+  const result = await userDB.insertOne(user)
+  res.send(result)
+})
 
 app.get('/menu', async(req, res) => {
    const cursor = menuDB.find()
