@@ -39,6 +39,11 @@ async function run() {
 
 app.post('/users', async(req,res) => {
   const user = req.body;
+  const query = {email: user.email}
+  const existingUser = await userDB.findOne(query)
+  if(existingUser){
+    return res.send({message: 'user already exist', insertedId:null })
+  }
   const result = await userDB.insertOne(user)
   res.send(result)
 })
@@ -96,3 +101,4 @@ app.get('/', (req, res) => {
 app.listen(port, () => {
     console.log(`'Bistro Boss is sitting on port ${port}'`)
 })
+
