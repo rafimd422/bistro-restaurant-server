@@ -37,6 +37,11 @@ async function run() {
 
 // users releted apis
 
+app.get('/users', async(req,res)=> {
+  const result = await userDB.find().toArray()
+  res.send(result)
+})
+
 app.post('/users', async(req,res) => {
   const user = req.body;
   const query = {email: user.email}
