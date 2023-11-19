@@ -3,11 +3,9 @@ const app = express()
 const cors = require('cors')
 const port = process.env.PORT || 5000;
 require('dotenv').config()
-
+var jwt = require('jsonwebtoken');
 app.use(cors())
 app.use(express.json())
-
-
 
 
 
@@ -34,6 +32,19 @@ async function run() {
     const reviewDB = database.collection("reviews");
     const cartDB = database.collection("carts");
     const userDB = database.collection("users");
+
+
+// jwt releted api
+app.post('/jwt', async(req, res)=> {
+  const user = req.body;
+  const token = jwt.sign( user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1hr' });
+  res.send({ token })
+})
+
+
+
+
+
 
 // users releted apis
 
