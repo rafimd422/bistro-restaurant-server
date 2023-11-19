@@ -71,6 +71,24 @@ async function run() {
     });
     
 
+
+    
+app.get('/users/admin/:email', verifyToken, async(req,res)=> {
+  const email = req.params.email;
+  if(email !== req.decoded.email){
+    return res.status(403).send({message:'unauthorized access'})
+  }
+  const query = {email:email};
+  const user = await userDB.findOne(query)
+  let admin = false;
+  if(user){
+    user?.role === 'admin';
+  }
+  res.send({admin})
+})
+
+
+
     app.post("/users", async (req, res) => {
       const user = req.body;
       console.log(req.headers);
