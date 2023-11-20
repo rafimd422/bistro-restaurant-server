@@ -31,23 +31,7 @@ async function run() {
     const cartDB = database.collection("carts");
     const userDB = database.collection("users");
 
-    // middlewares
 
-    const verifyToken = (req, res, next) => {
-      console.log("inside varify token", req.headers);
-
-      if (!req.headers.authorization) {
-        return res.status(401).send({ message: "forbidden access" });
-      }
-      const token = req.headers.authorization.split(" ")[1];
-      jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
-        if (err) {
-          return res.status(401).send({ message: "forbidden access" });
-        }
-        res.decoded = decoded;
-      });
-      next();
-    };
 
     // jwt releted api
     app.post("/jwt", async (req, res) => {
@@ -58,10 +42,38 @@ async function run() {
       res.send({ token });
     });
 
+    // middleware for verify token
+    const verifyToken = (req, res, next) => {
+      console.log('inside verify token', req.headers.authorization);
+      if (!req.headers.authorization) {
+        return res.status(401).send({ message: 'unauthorized access' });
+      }
+      const token = req.headers.authorization.split(' ')[1];
+      jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+        if (err) {
+          return res.status(401).send({ message: 'unauthorized access' })
+        }
+        req.decoded = decoded;
+        console.log(decoded)
+        next();
+      })
+    }
+      // use verify admin after verifyToken (middleWare)
+      const verifyAdmin = async (req, res, next) => {
+        const email = req.decoded?.email;
+        const query = { email: email };
+        const user = await userDB.findOne(query);
+        const isAdmin = user?.role === 'admin';
+        if (!isAdmin) {
+          return res.status(403).send({ message: 'forbidden access' });
+        }
+        next();
+      }
+  
     // users releted apis
 
 
-    app.get("/users", verifyToken, async (req, res) => {
+    app.get("/users", verifyToken,verifyAdmin, async (req, res) => {
       try {
         const result = await userDB.find().toArray();
         res.send(result);
@@ -71,27 +83,28 @@ async function run() {
     });
     
 
+    app.get('/users/admin/:email', verifyToken, async (req, res) => {
+      const email = req.params.email;
 
-    
-app.get('/users/admin/:email', verifyToken, async(req,res)=> {
-  const email = req.params.email;
-  if(email !== req.decoded.email){
-    return res.status(403).send({message:'unauthorized access'})
-  }
-  const query = {email:email};
-  const user = await userDB.findOne(query)
-  let admin = false;
-  if(user){
-    user?.role === 'admin';
-  }
-  res.send({admin})
-})
+      if (email !== req.decoded.email) {
+        return res.status(403).send({ message: 'forbidden access' })
+      }
+
+      const query = { email: email };
+      const user = await userDB.findOne(query);
+      let admin = false;
+      if (user) {
+        admin = user?.role === 'admin';
+      }
+      res.send({ admin });
+    })
+
 
 
 
     app.post("/users", async (req, res) => {
       const user = req.body;
-      console.log(req.headers);
+
       const query = { email: user.email };
       const existingUser = await userDB.findOne(query);
       if (existingUser) {
@@ -125,6 +138,13 @@ app.get('/users/admin/:email', verifyToken, async(req,res)=> {
       const result = await cursor.toArray();
       res.send(result);
     });
+
+    app.post('/menu', async (req, res)=> {
+      const item = req.body;
+      const result = await menuDB.insertOne(item)
+      res.send(result)
+    })
+
     app.get("/reviews", async (req, res) => {
       const cursor = reviewDB.find();
       const result = await cursor.toArray();
