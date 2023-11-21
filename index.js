@@ -44,14 +44,18 @@ async function run() {
 
     // middleware for verify token
     const verifyToken = (req, res, next) => {
-      console.log('inside verify token', req.headers.authorization);
+      const authorizationHeader = req.headers.authorization;
+      console.log('inside verify token', authorizationHeader);
       if (!req.headers.authorization) {
         return res.status(401).send({ message: 'unauthorized access' });
       }
-      const token = req.headers.authorization.split(' ')[1];
+      const token = authorizationHeader.split(' ')[1];
       jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
         if (err) {
-          return res.status(401).send({ message: 'unauthorized access' })
+          if (err.name === 'TokenExpiredError') {
+            return res.status(401).send({ message: 'Token has expired' });
+          }
+          return res.status(401).send({ message: 'Invalid token' });
         }
         req.decoded = decoded;
         console.log(decoded)
@@ -139,24 +143,31 @@ async function run() {
       res.send(result);
     });
 
+    
     app.post('/menu', async (req, res)=> {
       const item = req.body;
       const result = await menuDB.insertOne(item)
       res.send(result)
     })
 
-    app.delete('/menu/:id',verifyToken,verifyAdmin, async (req, res) =>{
-      const id = req.params.id;
-      const query = {_id: new ObjectId(id)}
-      const result = await menuDB.deleteOne(query)
-      res.send(result)
-    })
+    app.delete('/menu/:id', async (req, res) => {
+        const id = req.params.id;
+        console.log('Deleting item with ID:', id);
+        const query = { _id: id };
+        const result = await menuDB.deleteOne(query);
+        res.send(result)
+        
+    });
+    
 
     app.get("/reviews", async (req, res) => {
       const cursor = reviewDB.find();
       const result = await cursor.toArray();
       res.send(result);
     });
+
+
+    
     // cart collections
     app.post("/carts", async (req, res) => {
       const cartItem = req.body;
@@ -175,6 +186,12 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/carts/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await cartDB.findOne(query);
+      res.send(result);
+    });
     app.delete("/carts/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
