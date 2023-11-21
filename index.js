@@ -143,6 +143,12 @@ async function run() {
       res.send(result);
     });
 
+    app.get('/menu/:id', async(req,res)=> {
+      const id = req.params.id;
+      const query = {_id:id}
+      const result = await menuDB.findOne(query)
+      res.send(result);
+    })
     
     app.post('/menu', async (req, res)=> {
       const item = req.body;
