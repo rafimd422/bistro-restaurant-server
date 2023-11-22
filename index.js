@@ -3,6 +3,7 @@ const app = express();
 const cors = require("cors");
 const port = process.env.PORT || 5000;
 require("dotenv").config();
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 var jwt = require("jsonwebtoken");
 app.use(cors());
 app.use(express.json());
@@ -149,6 +150,22 @@ async function run() {
       const result = await menuDB.findOne(query)
       res.send(result);
     })
+    app.patch('/menu/:id', async(req,res) => {
+      const item = req.body;
+      const id = req.params.id;
+      const filter = {_id: id}
+      const updatedDoc = {
+        $set:{
+          name: item.name, 
+          category: item.category,
+          price: item.price,
+          recipe: item.recipe,
+          image: item.image
+        }
+      }
+      const result = await menuDB.updateOne(filter, updatedDoc)
+      res.send(result);
+    })
     
     app.post('/menu', async (req, res)=> {
       const item = req.body;
@@ -204,6 +221,27 @@ async function run() {
       const result = await cartDB.deleteOne(query);
       res.send(result);
     });
+
+// payment intend
+app.post('/create-payment-intent', async (req, res) => {
+  const { price } = req.body;
+  const amount = parseInt(price * 100);
+
+  try {
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: amount,
+      currency: 'usd',
+      payment_method_types: ['card']
+    });
+
+    res.send({ clientSecret: paymentIntent.client_secret });
+  } catch (error) {
+    console.error('Error creating PaymentIntent:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
