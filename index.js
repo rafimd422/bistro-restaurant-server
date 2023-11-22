@@ -231,29 +231,37 @@ async function run() {
       }
     });
 
-// payment releted api
-app.post('/payments', async (req, res) => {
-  const payment = req.body;
+    // payment releted api
 
-  // Insert the payment into the paymentDB collection
-  const paymentResult = await paymentDB.insertOne(payment);
-  console.log('Payment:', payment);
+    app.get("/payments/:email", verifyToken, async (req, res) => {
+      const query = { email: req.params.email };
+      if (req.params.email !== req.decoded?.email) {
+        return res.status(403).send({ message: "forbidden access" });
+      }
 
-  // Prepare a query to delete items from the cartDB collection based on cartId
-  const cartQuery = {
-    _id: {
-      $in: payment.cartId.map(id => new ObjectId(id))
-    }
-  };
+      const result = await paymentDB.find(query).toArray();
+      res.send(result);
+    });
 
-  // Delete items from the cartDB collection using the prepared query
-  const cartDeleteResult = await cartDB.deleteMany(cartQuery);
-  console.log('Delete Result:', cartDeleteResult);
+    app.post("/payments", async (req, res) => {
+      const payment = req.body;
 
-  res.send({ paymentResult, cartDeleteResult });
-});
+      // Insert the payment into the paymentDB collection
+      const paymentResult = await paymentDB.insertOne(payment);
 
+      // Prepare a query to delete items from the cartDB collection based on cartId
+      const cartQuery = {
+        _id: {
+          $in: payment.cartId.map((id) => new ObjectId(id)),
+        },
+      };
 
+      // Delete items from the cartDB collection using the prepared query
+      const cartDeleteResult = await cartDB.deleteMany(cartQuery);
+      console.log("Delete Result:", cartDeleteResult);
+
+      res.send({ paymentResult, cartDeleteResult });
+    });
 
     await client.db("admin").command({ ping: 1 });
     console.log(
