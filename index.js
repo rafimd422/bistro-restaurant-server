@@ -263,6 +263,26 @@ async function run() {
       res.send({ paymentResult, cartDeleteResult });
     });
 
+
+// stats or analytics
+app.get('/admin-stats',verifyToken, async(req,res) => {
+  const users = await userDB.estimatedDocumentCount();
+  const manu = await menuDB.estimatedDocumentCount();
+  const orders = await paymentDB.estimatedDocumentCount();
+  
+
+//this is not the best way
+const payments = await paymentDB.find().toArray()
+const revenue = payments.reduce((total, payment) => total + payment.price,0)
+
+  res.send({
+    users,
+    manu,
+    orders,
+    revenue
+  })
+})
+
     await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
